@@ -24,17 +24,13 @@ Describe 'New-Meme' {
 
     Context 'Functionality' {
         It 'Should download image and call Invoke-MemeImageModification' {
-            # Mock the WebRequest
-            $mockResponse = [PSCustomObject]@{
-                Content = [byte[]]@(1, 2, 3)
-            }
-            Mock Invoke-WebRequest { return $mockResponse }
-
-            # Mock the private function
-            Mock Invoke-MemeImageModification { return [System.IO.FileInfo]::new('C:\test.jpg') }
+            Mock Invoke-WebRequest { return $null }
+            Mock Invoke-MemeImageModification { return $null }
+            Mock Get-Item { return [System.IO.FileInfo]::new('C:\test.jpg') }
 
             $result = New-Meme -Url 'https://example.com/image.jpg' -OutputPath '.\test.jpg' -TopText 'TOP' -BottomText 'BOTTOM'
 
+            Should -Invoke Invoke-WebRequest -Exactly 1
             Should -Invoke Invoke-MemeImageModification -Exactly 1
         }
 

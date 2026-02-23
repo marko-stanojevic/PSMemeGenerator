@@ -5,7 +5,6 @@ function New-Meme {
 
     .DESCRIPTION
         Downloads a meme template from a URL and applies top and bottom text using System.Drawing.
-        The text is drawn with a white fill and black outline, centered horizontally.
         Requires Windows OS due to System.Drawing dependencies in modern .NET.
 
     .PARAMETER Id
@@ -96,16 +95,16 @@ function New-Meme {
             if ($PSCmdlet.ShouldProcess($resolvedPath, "Create meme from $targetUrl")) {
                 Write-Verbose "Downloading image from $targetUrl"
 
-                # Download image to memory
+                $tempFile = [System.IO.Path]::GetTempFileName()
                 try {
-                    $response = Invoke-WebRequest -Uri $targetUrl -Method Get
-                    $imageBytes = $response.Content
-                } catch {
-                    throw "Failed to download image from $targetUrl. Error: $_"
+                    Invoke-WebRequest -Uri $targetUrl -OutFile $tempFile
+                    Invoke-MemeImageModification -ImagePath $tempFile -OutputPath $resolvedPath -TopText $TopText -BottomText $BottomText
+                    Get-Item -Path $resolvedPath
+                } finally {
+                    if (Test-Path $tempFile) {
+                        Remove-Item -Path $tempFile -Force
+                    }
                 }
-
-                # Call the private function to handle the image modification
-                Invoke-MemeImageModification -ImageBytes $imageBytes -OutputPath $resolvedPath -TopText $TopText -BottomText $BottomText
             }
         } catch {
             Write-Verbose "$($MyInvocation.MyCommand) Operation failed: $_"
