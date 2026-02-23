@@ -77,10 +77,10 @@ Returns a `System.IO.FileInfo` for the saved meme.
 
 ```powershell
 # 1. Find a template
-Get-MemeTemplate -Name 'Drake'
+Get-MemeTemplate -Name 'Drake Hotline Bling'
 
 # 2. Create the meme
-New-Meme -Name 'Drake' `
+New-Meme -Id '181913649' `
          -TopText 'Reading the error message' `
          -BottomText 'Googling the error message' `
          -OutputPath '.\drake.jpg'
@@ -139,13 +139,13 @@ try {
 Use `-Verbose` for detailed diagnostic output:
 
 ```powershell
-New-Meme -Name 'Drake' -TopText 'Test' -OutputPath '.\out.jpg' -Verbose
+New-Meme -Id '181913649' -TopText 'Test' -OutputPath '.\out.jpg' -Verbose
 ```
 
 Use `-WhatIf` to preview without writing a file:
 
 ```powershell
-New-Meme -Name 'Drake' -TopText 'Test' -OutputPath '.\out.jpg' -WhatIf
+New-Meme -Id '181913649' -TopText 'Test' -OutputPath '.\out.jpg' -WhatIf
 ```
 
 ---

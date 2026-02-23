@@ -37,26 +37,49 @@ function Invoke-MemeImageModification {
             $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
 
             $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
-            $font = New-Object System.Drawing.Font('Impact', 40, [System.Drawing.FontStyle]::Bold)
+            $font = $null
             $padding = 10
+            $maxFontSize = [float][Math]::Min(40, $bitmap.Width / 5)
             # GenericTypographic gives true text bounds without GDI+ whitespace padding
             $typographicFormat = [System.Drawing.StringFormat]::GenericTypographic
 
             if (-not [string]::IsNullOrWhiteSpace($TopText)) {
                 $text = $TopText.ToUpper()
+                $fontSize = $maxFontSize
+                $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                 $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
+                while ($size.Width -gt ($bitmap.Width - 2 * $padding) -and $fontSize -gt 8) {
+                    $font.Dispose()
+                    $fontSize -= 1
+                    $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
+                    $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
+                }
+                Write-Verbose "TopText font size: $fontSize pt"
                 $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
                 $point = New-Object System.Drawing.PointF($x, [float]$padding)
                 $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
+                $font.Dispose()
+                $font = $null
             }
 
             if (-not [string]::IsNullOrWhiteSpace($BottomText)) {
                 $text = $BottomText.ToUpper()
+                $fontSize = $maxFontSize
+                $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                 $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
+                while ($size.Width -gt ($bitmap.Width - 2 * $padding) -and $fontSize -gt 8) {
+                    $font.Dispose()
+                    $fontSize -= 1
+                    $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
+                    $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
+                }
+                Write-Verbose "BottomText font size: $fontSize pt"
                 $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
                 $y = [float]($bitmap.Height - $size.Height - $padding)
                 $point = New-Object System.Drawing.PointF($x, $y)
                 $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
+                $font.Dispose()
+                $font = $null
             }
 
             $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
