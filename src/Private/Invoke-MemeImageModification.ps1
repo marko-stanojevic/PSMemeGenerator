@@ -64,12 +64,22 @@ function Invoke-MemeImageModification {
             $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
             $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
 
+            Write-Verbose "Bitmap DPI: HorzRes=$($bitmap.HorizontalResolution) VertRes=$($bitmap.VerticalResolution)"
+            Write-Verbose "Graphics DPI: DpiX=$($graphics.DpiX) DpiY=$($graphics.DpiY)"
+            Write-Verbose "PixelFormat: $($bitmap.PixelFormat)"
+
+            # Check if Impact font is available; warn if falling back to a system default
+            $impactCheck = New-Object System.Drawing.Font('Impact', 12, [System.Drawing.FontStyle]::Bold)
+            Write-Verbose "Font resolved: '$($impactCheck.Name)' (requested 'Impact') — $(if ($impactCheck.Name -ne 'Impact') { 'WARNING: Impact not installed, using fallback' } else { 'OK' })"
+            $impactCheck.Dispose()
+
             $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
             $font = $null
             $padding = 10
             $maxFontSize = [float][Math]::Min(40, $bitmap.Width / 5)
+            $availableWidth = $bitmap.Width - 2 * $padding
             Write-Verbose "Image dimensions for layout: Width=$($bitmap.Width) Height=$($bitmap.Height)"
-            Write-Verbose "Padding: $padding  MaxFontSize: $maxFontSize pt"
+            Write-Verbose "Padding: $padding  MaxFontSize: $maxFontSize pt  AvailableWidth: $availableWidth px"
             # GenericTypographic gives true text bounds without GDI+ whitespace padding
             $typographicFormat = [System.Drawing.StringFormat]::GenericTypographic
 
@@ -79,12 +89,15 @@ function Invoke-MemeImageModification {
                 $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                 $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 Write-Verbose "TopText='$text'  Initial measured size: Width=$([Math]::Round($size.Width,1)) Height=$([Math]::Round($size.Height,1)) at $fontSize pt"
-                while ($size.Width -gt ($bitmap.Width - 2 * $padding) -and $fontSize -gt 8) {
+                $iterations = 0
+                while ($size.Width -gt $availableWidth -and $fontSize -gt 8) {
                     $font.Dispose()
                     $fontSize -= 1
+                    $iterations++
                     $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                     $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 }
+                Write-Verbose "TopText scaling: $iterations iteration(s)  fitCheck=($([Math]::Round($size.Width,1)) <= $availableWidth)"
                 $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
                 Write-Verbose "TopText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$padding"
                 $point = New-Object System.Drawing.PointF($x, [float]$padding)
@@ -99,12 +112,15 @@ function Invoke-MemeImageModification {
                 $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                 $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 Write-Verbose "BottomText='$text'  Initial measured size: Width=$([Math]::Round($size.Width,1)) Height=$([Math]::Round($size.Height,1)) at $fontSize pt"
-                while ($size.Width -gt ($bitmap.Width - 2 * $padding) -and $fontSize -gt 8) {
+                $iterations = 0
+                while ($size.Width -gt $availableWidth -and $fontSize -gt 8) {
                     $font.Dispose()
                     $fontSize -= 1
+                    $iterations++
                     $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                     $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 }
+                Write-Verbose "BottomText scaling: $iterations iteration(s)  fitCheck=($([Math]::Round($size.Width,1)) <= $availableWidth)"
                 $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
                 $y = [float]($bitmap.Height - $size.Height - $padding)
                 Write-Verbose "BottomText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$([Math]::Round($y,1))"
