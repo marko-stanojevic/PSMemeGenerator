@@ -42,15 +42,17 @@ function Invoke-MemeImageModification {
             $format = New-Object System.Drawing.StringFormat
             $format.Alignment = [System.Drawing.StringAlignment]::Center
 
+            $padding = 10
+
             if (-not [string]::IsNullOrWhiteSpace($TopText)) {
                 $format.LineAlignment = [System.Drawing.StringAlignment]::Near
-                $rect = New-Object System.Drawing.RectangleF(0, 10, $bitmap.Width, $bitmap.Height)
+                $rect = New-Object System.Drawing.RectangleF($padding, $padding, ($bitmap.Width - 2 * $padding), $bitmap.Height)
                 $graphics.DrawString($TopText.ToUpper(), $font, $brush, $rect, $format)
             }
 
             if (-not [string]::IsNullOrWhiteSpace($BottomText)) {
                 $format.LineAlignment = [System.Drawing.StringAlignment]::Far
-                $rect = New-Object System.Drawing.RectangleF(0, 0, $bitmap.Width, $bitmap.Height - 10)
+                $rect = New-Object System.Drawing.RectangleF($padding, 0, ($bitmap.Width - 2 * $padding), ($bitmap.Height - $padding))
                 $graphics.DrawString($BottomText.ToUpper(), $font, $brush, $rect, $format)
             }
 
@@ -58,7 +60,7 @@ function Invoke-MemeImageModification {
             $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
             $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 100L)
 
-            $bitmap.Save($OutputPath, $jpegCodec, $encoderParams)
+            [void] ($bitmap.Save($OutputPath, $jpegCodec, $encoderParams))
         } catch {
             Write-Verbose "$($MyInvocation.MyCommand) Operation failed: $_"
             Write-Verbose "StackTrace: $($_.ScriptStackTrace)"
