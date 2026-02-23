@@ -50,7 +50,7 @@ function Invoke-MemeImageModification {
 
             if (-not [string]::IsNullOrWhiteSpace($BottomText)) {
                 $format.LineAlignment = [System.Drawing.StringAlignment]::Far
-                $rect = New-Object System.Drawing.RectangleF(0, 0, $bitmap.Width, $bitmap.Height - 10)
+                $rect = New-Object System.Drawing.RectangleF(0, 0, $bitmap.Width, ($bitmap.Height - 10))
                 $graphics.DrawString($BottomText.ToUpper(), $font, $brush, $rect, $format)
             }
 
@@ -58,7 +58,7 @@ function Invoke-MemeImageModification {
             $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
             $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 100L)
 
-            $bitmap.Save($OutputPath, $jpegCodec, $encoderParams)
+            [void] ($bitmap.Save($OutputPath, $jpegCodec, $encoderParams))
         } catch {
             Write-Verbose "$($MyInvocation.MyCommand) Operation failed: $_"
             Write-Verbose "StackTrace: $($_.ScriptStackTrace)"
