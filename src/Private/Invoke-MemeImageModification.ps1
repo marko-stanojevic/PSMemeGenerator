@@ -39,22 +39,24 @@ function Invoke-MemeImageModification {
             $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
             $font = New-Object System.Drawing.Font('Impact', 40, [System.Drawing.FontStyle]::Bold)
             $padding = 10
+            # GenericTypographic gives true text bounds without GDI+ whitespace padding
+            $typographicFormat = [System.Drawing.StringFormat]::GenericTypographic
 
             if (-not [string]::IsNullOrWhiteSpace($TopText)) {
                 $text = $TopText.ToUpper()
-                $size = $graphics.MeasureString($text, $font)
+                $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
                 $point = New-Object System.Drawing.PointF($x, [float]$padding)
-                $graphics.DrawString($text, $font, $brush, $point)
+                $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
             }
 
             if (-not [string]::IsNullOrWhiteSpace($BottomText)) {
                 $text = $BottomText.ToUpper()
-                $size = $graphics.MeasureString($text, $font)
+                $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
                 $y = [float]($bitmap.Height - $size.Height - $padding)
                 $point = New-Object System.Drawing.PointF($x, $y)
-                $graphics.DrawString($text, $font, $brush, $point)
+                $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
             }
 
             $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
