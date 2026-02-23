@@ -24,8 +24,11 @@ Describe 'New-Meme' {
 
     Context 'Functionality' {
         It 'Should download image and call Invoke-MemeImageModification' {
-            # Mock the WebClient
-            Mock Invoke-RestMethod { return [byte[]]@(1, 2, 3) }
+            # Mock the WebRequest
+            $mockResponse = [PSCustomObject]@{
+                Content = [byte[]]@(1, 2, 3)
+            }
+            Mock Invoke-WebRequest { return $mockResponse }
 
             # Mock the private function
             Mock Invoke-MemeImageModification { return [System.IO.FileInfo]::new('C:\test.jpg') }
@@ -36,7 +39,7 @@ Describe 'New-Meme' {
         }
 
         It 'Should throw if URL is invalid' {
-            Mock Invoke-RestMethod { throw 'Invalid URL' }
+            Mock Invoke-WebRequest { throw 'Invalid URL' }
             { New-Meme -Url 'invalid_url' -OutputPath '.\test.jpg' } | Should -Throw
         }
     }

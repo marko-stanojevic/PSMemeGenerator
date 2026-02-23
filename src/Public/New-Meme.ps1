@@ -98,7 +98,8 @@ function New-Meme {
 
                 # Download image to memory
                 try {
-                    $imageBytes = Invoke-RestMethod -Uri $targetUrl -Method Get
+                    $response = Invoke-WebRequest -Uri $targetUrl -Method Get
+                    $imageBytes = $response.Content
                 } catch {
                     throw "Failed to download image from $targetUrl. Error: $_"
                 }
