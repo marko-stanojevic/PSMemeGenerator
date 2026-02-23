@@ -1,6 +1,4 @@
 function Invoke-MemeImageModification {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('InjectionRisk.AddType', '',
-        Justification = 'Suppress false positives in PSRule for Add-Type usage')]
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -23,15 +21,37 @@ function Invoke-MemeImageModification {
         if (-not $IsWindows) {
             throw 'This function requires Windows OS due to System.Drawing dependencies.'
         }
-        if (-not ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'System.Drawing' })) {
-            Add-Type -AssemblyName 'System.Drawing'
-        }
     }
 
     process {
         try {
             Write-Verbose "Modifying image $ImagePath and saving to $OutputPath"
             $bitmap = [System.Drawing.Image]::FromFile($ImagePath)
+
+            # Normalize EXIF orientation so bitmap.Width/Height match the displayed dimensions.
+            # Viewers (Windows Photo Viewer, browsers) auto-apply EXIF rotation, but
+            # System.Drawing reports raw stored dimensions. Without this correction,
+            # centering math uses the wrong axis for portrait images.
+            $exifOrientationId = 274
+            if ($bitmap.PropertyIdList -contains $exifOrientationId) {
+                $orientationValue = $bitmap.GetPropertyItem($exifOrientationId).Value[0]
+                $rotateFlipType = switch ($orientationValue) {
+                    2 { [System.Drawing.RotateFlipType]::RotateNoneFlipX }
+                    3 { [System.Drawing.RotateFlipType]::Rotate180FlipNone }
+                    4 { [System.Drawing.RotateFlipType]::Rotate180FlipX }
+                    5 { [System.Drawing.RotateFlipType]::Rotate90FlipX }
+                    6 { [System.Drawing.RotateFlipType]::Rotate90FlipNone }
+                    7 { [System.Drawing.RotateFlipType]::Rotate270FlipX }
+                    8 { [System.Drawing.RotateFlipType]::Rotate270FlipNone }
+                    default { $null }
+                }
+                if ($null -ne $rotateFlipType) {
+                    $bitmap.RotateFlip($rotateFlipType)
+                    $bitmap.RemovePropertyItem($exifOrientationId)
+                    Write-Verbose "Applied EXIF orientation correction (tag value: $orientationValue)"
+                }
+            }
+
             $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
             $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
             $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
