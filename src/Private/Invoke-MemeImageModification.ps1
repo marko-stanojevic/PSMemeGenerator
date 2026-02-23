@@ -59,17 +59,17 @@ function Invoke-MemeImageModification {
             $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 100L)
 
             $bitmap.Save($OutputPath, $jpegCodec, $encoderParams)
-
-            $graphics.Dispose()
-            $bitmap.Dispose()
-            $brush.Dispose()
-            $font.Dispose()
-            $format.Dispose()
-            $encoderParams.Dispose()
         } catch {
             Write-Verbose "$($MyInvocation.MyCommand) Operation failed: $_"
             Write-Verbose "StackTrace: $($_.ScriptStackTrace)"
             throw $_
+        } finally {
+            if ($null -ne $graphics) { $graphics.Dispose() }
+            if ($null -ne $bitmap) { $bitmap.Dispose() }
+            if ($null -ne $brush) { $brush.Dispose() }
+            if ($null -ne $font) { $font.Dispose() }
+            if ($null -ne $format) { $format.Dispose() }
+            if ($null -ne $encoderParams) { $encoderParams.Dispose() }
         }
     }
 
