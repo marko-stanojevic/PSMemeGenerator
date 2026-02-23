@@ -1,6 +1,4 @@
 function Invoke-MemeImageModification {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('InjectionRisk.AddType', '',
-        Justification = 'Suppress false positives in PSRule for Add-Type usage')]
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -22,9 +20,6 @@ function Invoke-MemeImageModification {
         Write-Verbose "Starting $($MyInvocation.MyCommand)"
         if (-not $IsWindows) {
             throw 'This function requires Windows OS due to System.Drawing dependencies.'
-        }
-        if (-not ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'System.Drawing' })) {
-            Add-Type -AssemblyName 'System.Drawing'
         }
     }
 
