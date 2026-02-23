@@ -38,22 +38,23 @@ function Invoke-MemeImageModification {
 
             $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
             $font = New-Object System.Drawing.Font('Impact', 40, [System.Drawing.FontStyle]::Bold)
-
-            $format = New-Object System.Drawing.StringFormat
-            $format.Alignment = [System.Drawing.StringAlignment]::Center
-
             $padding = 10
 
             if (-not [string]::IsNullOrWhiteSpace($TopText)) {
-                $format.LineAlignment = [System.Drawing.StringAlignment]::Near
-                $rect = New-Object System.Drawing.RectangleF($padding, $padding, ($bitmap.Width - 2 * $padding), $bitmap.Height)
-                $graphics.DrawString($TopText.ToUpper(), $font, $brush, $rect, $format)
+                $text = $TopText.ToUpper()
+                $size = $graphics.MeasureString($text, $font)
+                $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
+                $point = New-Object System.Drawing.PointF($x, [float]$padding)
+                $graphics.DrawString($text, $font, $brush, $point)
             }
 
             if (-not [string]::IsNullOrWhiteSpace($BottomText)) {
-                $format.LineAlignment = [System.Drawing.StringAlignment]::Far
-                $rect = New-Object System.Drawing.RectangleF($padding, 0, ($bitmap.Width - 2 * $padding), ($bitmap.Height - $padding))
-                $graphics.DrawString($BottomText.ToUpper(), $font, $brush, $rect, $format)
+                $text = $BottomText.ToUpper()
+                $size = $graphics.MeasureString($text, $font)
+                $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
+                $y = [float]($bitmap.Height - $size.Height - $padding)
+                $point = New-Object System.Drawing.PointF($x, $y)
+                $graphics.DrawString($text, $font, $brush, $point)
             }
 
             $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
@@ -70,7 +71,6 @@ function Invoke-MemeImageModification {
             if ($null -ne $bitmap) { $bitmap.Dispose() }
             if ($null -ne $brush) { $brush.Dispose() }
             if ($null -ne $font) { $font.Dispose() }
-            if ($null -ne $format) { $format.Dispose() }
             if ($null -ne $encoderParams) { $encoderParams.Dispose() }
         }
     }
