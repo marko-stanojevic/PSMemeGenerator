@@ -9,11 +9,13 @@ A PowerShell-powered meme generator for engineers who prefer pipelines over Phot
 
 ## About
 
-PSMemeGenerator is a PowerShell module that {BRIEF_MODULE_PURPOSE}. It aims to {MODULE_GOALS_OR_OBJECTIVES}.
+PSMemeGenerator is a PowerShell module that generates memes straight from the terminal. It fetches templates from the [Imgflip API](https://imgflip.com/api), overlays top/bottom text using `System.Drawing`, and saves the result as a JPEG — no browser or image editor required.
 
 ## Why PSMemeGenerator?
 
-PSMemeGenerator is designed to {BRIEF_MODULE_PURPOSE}. It simplifies {SPECIFIC_TASKS_OR_PROCESSES} by providing {KEY_BENEFITS_OR_FEATURES}.
+PSMemeGenerator is designed for engineers who live in the terminal. It simplifies meme creation by integrating directly into PowerShell pipelines, so you can automate, script, and compose memes the same way you do everything else. Perfect for CI jokes, release notes, incident post-mortems, and general infrastructure sarcasm.
+
+> **Note:** Requires **Windows OS** — text rendering depends on `System.Drawing` (GDI+).
 
 ## 🚀 Getting Started
 
@@ -22,6 +24,7 @@ PSMemeGenerator is designed to {BRIEF_MODULE_PURPOSE}. It simplifies {SPECIFIC_T
 **Required:**
 
 - **PowerShell 7.0+**
+- **Windows OS** (for `System.Drawing` / GDI+ support)
 
 ### Installation
 
@@ -38,6 +41,26 @@ Import the module and use its commands:
 ```powershell
 Import-Module PSMemeGenerator
 Get-Command -Module PSMemeGenerator
+```
+
+#### Find a template
+
+```powershell
+Get-MemeTemplate -Name 'Distracted Boyfriend' 
+```
+
+#### Generate a meme for every matching template
+
+```powershell
+Get-MemeTemplate | ForEach-Object {
+    New-Meme -Id $_.Id -TopText 'Pull requests' -BottomText 'Pushing directly to main' -OutputPath ".\drake_$($_.Id).jpg"
+}
+```
+
+#### Quick one-liner with a known template name
+
+```powershell
+New-Meme -Name 'Two Buttons' -TopText 'Fix the bug' -BottomText 'Close the ticket as "by design"' -OutputPath '.\buttons.jpg'
 ```
 
 ## 📘 Documentation
