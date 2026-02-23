@@ -27,6 +27,8 @@ function Invoke-MemeImageModification {
         try {
             Write-Verbose "Modifying image $ImagePath and saving to $OutputPath"
             $bitmap = [System.Drawing.Image]::FromFile($ImagePath)
+            Write-Verbose "Raw bitmap dimensions after load: Width=$($bitmap.Width) Height=$($bitmap.Height)"
+            Write-Verbose "EXIF property IDs present: $($bitmap.PropertyIdList -join ', ')"
 
             # Normalize EXIF orientation so bitmap.Width/Height match the displayed dimensions.
             # Viewers (Windows Photo Viewer, browsers) auto-apply EXIF rotation, but
@@ -35,6 +37,7 @@ function Invoke-MemeImageModification {
             $exifOrientationId = 274
             if ($bitmap.PropertyIdList -contains $exifOrientationId) {
                 $orientationValue = $bitmap.GetPropertyItem($exifOrientationId).Value[0]
+                Write-Verbose "EXIF orientation tag (274) found, value: $orientationValue"
                 $rotateFlipType = switch ($orientationValue) {
                     2 { [System.Drawing.RotateFlipType]::RotateNoneFlipX }
                     3 { [System.Drawing.RotateFlipType]::Rotate180FlipNone }
@@ -49,7 +52,12 @@ function Invoke-MemeImageModification {
                     $bitmap.RotateFlip($rotateFlipType)
                     $bitmap.RemovePropertyItem($exifOrientationId)
                     Write-Verbose "Applied EXIF orientation correction (tag value: $orientationValue)"
+                    Write-Verbose "Bitmap dimensions after EXIF correction: Width=$($bitmap.Width) Height=$($bitmap.Height)"
+                } else {
+                    Write-Verbose "EXIF orientation value $orientationValue requires no rotation"
                 }
+            } else {
+                Write-Verbose 'No EXIF orientation tag found, using raw dimensions as-is'
             }
 
             $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
@@ -60,6 +68,8 @@ function Invoke-MemeImageModification {
             $font = $null
             $padding = 10
             $maxFontSize = [float][Math]::Min(40, $bitmap.Width / 5)
+            Write-Verbose "Image dimensions for layout: Width=$($bitmap.Width) Height=$($bitmap.Height)"
+            Write-Verbose "Padding: $padding  MaxFontSize: $maxFontSize pt"
             # GenericTypographic gives true text bounds without GDI+ whitespace padding
             $typographicFormat = [System.Drawing.StringFormat]::GenericTypographic
 
@@ -68,14 +78,15 @@ function Invoke-MemeImageModification {
                 $fontSize = $maxFontSize
                 $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                 $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
+                Write-Verbose "TopText='$text'  Initial measured size: Width=$([Math]::Round($size.Width,1)) Height=$([Math]::Round($size.Height,1)) at $fontSize pt"
                 while ($size.Width -gt ($bitmap.Width - 2 * $padding) -and $fontSize -gt 8) {
                     $font.Dispose()
                     $fontSize -= 1
                     $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                     $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 }
-                Write-Verbose "TopText font size: $fontSize pt"
                 $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
+                Write-Verbose "TopText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$padding"
                 $point = New-Object System.Drawing.PointF($x, [float]$padding)
                 $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
                 $font.Dispose()
@@ -87,15 +98,16 @@ function Invoke-MemeImageModification {
                 $fontSize = $maxFontSize
                 $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                 $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
+                Write-Verbose "BottomText='$text'  Initial measured size: Width=$([Math]::Round($size.Width,1)) Height=$([Math]::Round($size.Height,1)) at $fontSize pt"
                 while ($size.Width -gt ($bitmap.Width - 2 * $padding) -and $fontSize -gt 8) {
                     $font.Dispose()
                     $fontSize -= 1
                     $font = New-Object System.Drawing.Font('Impact', $fontSize, [System.Drawing.FontStyle]::Bold)
                     $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 }
-                Write-Verbose "BottomText font size: $fontSize pt"
                 $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
                 $y = [float]($bitmap.Height - $size.Height - $padding)
+                Write-Verbose "BottomText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$([Math]::Round($y,1))"
                 $point = New-Object System.Drawing.PointF($x, $y)
                 $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
                 $font.Dispose()
