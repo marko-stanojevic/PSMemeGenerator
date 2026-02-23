@@ -1,5 +1,6 @@
 BeforeAll {
     . $PSCommandPath.Replace('.Tests.ps1', '.ps1')
+    . $PSCommandPath.Replace('New-Meme.Tests.ps1', '../Private/Invoke-MemeImageModification.ps1')
 }
 
 Describe 'New-Meme' {
@@ -22,29 +23,20 @@ Describe 'New-Meme' {
     }
 
     Context 'Functionality' {
-        It 'Should throw on non-Windows systems' -Skip:$IsWindows {
-            { New-Meme -Url 'https://example.com/image.jpg' -OutputPath '.\test.jpg' } | Should -Throw 'This function requires Windows OS due to System.Drawing dependencies.'
+        It 'Should download image and call Invoke-MemeImageModification' {
+            # Mock the WebClient
+            Mock Invoke-RestMethod { return [byte[]]@(1, 2, 3) }
+
+            # Mock the private function
+            Mock Invoke-MemeImageModification { return [System.IO.FileInfo]::new('C:\test.jpg') }
+
+            $result = New-Meme -Url 'https://example.com/image.jpg' -OutputPath '.\test.jpg' -TopText 'TOP' -BottomText 'BOTTOM'
+
+            Should -Invoke Invoke-MemeImageModification -Exactly 1
         }
 
-        It 'Should download image and save it' -Skip:(-not $IsWindows) {
-            # This test would run on Windows and actually test the functionality
-            # For a full test, we would need a real image URL and a temporary output path
-            $tempPath = Join-Path $env:TEMP 'test_meme.jpg'
-            try {
-                # We mock the WebClient to avoid actual downloads in unit tests
-                # But since we can't mock .NET methods easily, we'd need a real image
-                # For now, we just verify the function exists and has the right parameters
-                $command = Get-Command New-Meme
-                $command.Parameters.Keys | Should -Contain 'Url'
-                $command.Parameters.Keys | Should -Contain 'Name'
-                $command.Parameters.Keys | Should -Contain 'Id'
-                $command.Parameters.Keys | Should -Contain 'OutputPath'
-            } finally {
-                if (Test-Path $tempPath) { Remove-Item $tempPath -Force }
-            }
-        }
-
-        It 'Should throw if URL is invalid' -Skip:(-not $IsWindows) {
+        It 'Should throw if URL is invalid' {
+            Mock Invoke-RestMethod { throw 'Invalid URL' }
             { New-Meme -Url 'invalid_url' -OutputPath '.\test.jpg' } | Should -Throw
         }
     }
