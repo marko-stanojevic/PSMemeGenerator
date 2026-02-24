@@ -17,15 +17,15 @@ PSMemeGenerator is designed for engineers who live in the terminal. It simplifie
 
 > **Note:** Requires **Windows OS** — text rendering depends on `System.Drawing` (GDI+).
 
-## � Example Output
+## Example Output
 
 ```powershell
 New-Meme -Name 'Futurama Fry' -TopText 'Not sure is prod is broken' -BottomText 'Or monitoring'
 ```
 
-![Futurama Fry - Not sure is prod is broken or monitoring](assets/futurama_fry_test_passing.png)
+![Futurama Fry - Not sure is prod is broken or monitoring](assets/futurama_fry_prod_or_monitoring.png)
 
-## �🚀 Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -40,15 +40,6 @@ Install the module from the PowerShell Gallery:
 
 ```powershell
 Install-Module -Name PSMemeGenerator -Scope CurrentUser
-```
-
-### Usage
-
-Import the module and use its commands:
-
-```powershell
-Import-Module PSMemeGenerator
-Get-Command -Module PSMemeGenerator
 ```
 
 #### Find a template
