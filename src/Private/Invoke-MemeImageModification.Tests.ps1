@@ -15,12 +15,12 @@ Describe 'Invoke-MemeImageModification' {
             if ($IsWindows) {
                 Set-Variable -Name IsWindows -Value $false -Scope Global -Force
                 try {
-                    { Invoke-MemeImageModification -ImagePath 'test.jpg' -OutputPath 'out.jpg' } | Should -Throw '*requires Windows OS*'
+                    { Invoke-MemeImageModification -ImagePath 'test.jpg' -OutputPath 'out.jpg' } | Should -Throw '*requires Windows*'
                 } finally {
                     Set-Variable -Name IsWindows -Value $true -Scope Global -Force
                 }
             } else {
-                { Invoke-MemeImageModification -ImagePath 'test.jpg' -OutputPath 'out.jpg' } | Should -Throw '*requires Windows OS*'
+                { Invoke-MemeImageModification -ImagePath 'test.jpg' -OutputPath 'out.jpg' } | Should -Throw '*requires Windows*'
             }
         }
     }
