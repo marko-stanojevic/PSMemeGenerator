@@ -17,7 +17,15 @@ PSMemeGenerator is designed for engineers who live in the terminal. It simplifie
 
 > **Note:** Requires **Windows OS** — text rendering depends on `System.Drawing` (GDI+).
 
-## 🚀 Getting Started
+## � Example Output
+
+```powershell
+New-Meme -Name 'Futurama Fry' -TopText 'Not sure is prod is broken' -BottomText 'Or monitoring'
+```
+
+![Futurama Fry - Not sure is prod is broken or monitoring](assets/futurama_fry_test_passing.png)
+
+## �🚀 Getting Started
 
 ### Prerequisites
 
