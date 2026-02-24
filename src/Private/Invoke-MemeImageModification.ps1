@@ -26,7 +26,8 @@
     process {
         try {
             Write-Verbose "Modifying image $ImagePath and saving to $OutputPath"
-            $bitmap = [System.Drawing.Image]::FromFile($ImagePath)
+            # Load as Bitmap (not Image) so GetPixel is available for content-bounds detection
+            $bitmap = New-Object System.Drawing.Bitmap($ImagePath)
             Write-Verbose "Raw bitmap dimensions after load: Width=$($bitmap.Width) Height=$($bitmap.Height)"
             Write-Verbose "EXIF property IDs present: $($bitmap.PropertyIdList -join ', ')"
 
@@ -60,6 +61,28 @@
                 Write-Verbose 'No EXIF orientation tag found, using raw dimensions as-is'
             }
 
+            # Detect content width: scan columns from the right inward to find where non-white
+            # pixels begin. This handles templates (e.g. Drake) that have a baked-in white panel
+            # on the right half — white text on white background would be invisible without this.
+            $whiteThreshold = 245
+            $sampleStep = [Math]::Max(1, [int]($bitmap.Height / 20))
+            $contentWidth = $bitmap.Width
+            for ($col = $bitmap.Width - 1; $col -ge [int]($bitmap.Width * 0.4); $col--) {
+                $isBlank = $true
+                for ($row = 0; $row -lt $bitmap.Height; $row += $sampleStep) {
+                    $px = $bitmap.GetPixel($col, $row)
+                    if ($px.R -lt $whiteThreshold -or $px.G -lt $whiteThreshold -or $px.B -lt $whiteThreshold) {
+                        $isBlank = $false
+                        break
+                    }
+                }
+                if (-not $isBlank) {
+                    $contentWidth = $col + 1
+                    break
+                }
+            }
+            Write-Verbose "Content width detection: storedWidth=$($bitmap.Width)px  contentWidth=$($contentWidth)px"
+
             $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
             $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
             $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
@@ -76,8 +99,8 @@
             $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
             $font = $null
             $padding = 10
-            $maxFontSize = [float][Math]::Min(40, $bitmap.Width / 5)
-            $availableWidth = $bitmap.Width - 2 * $padding
+            $maxFontSize = [float][Math]::Min(40, $contentWidth / 5)
+            $availableWidth = $contentWidth - 2 * $padding
             Write-Verbose "Image dimensions for layout: Width=$($bitmap.Width) Height=$($bitmap.Height)"
             Write-Verbose "Padding=$padding  MaxFontSize=$maxFontSize pt  AvailableWidth=$availableWidth px"
             # GenericTypographic gives true text bounds without GDI+ whitespace padding
@@ -98,7 +121,7 @@
                     $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 }
                 Write-Verbose "TopText scaling: $iterations iteration(s)  fitCheck=($([Math]::Round($size.Width,1)) <= $availableWidth)"
-                $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
+                $x = [float][Math]::Max(($contentWidth - $size.Width) / 2, $padding)
                 Write-Verbose "TopText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$padding"
                 $point = New-Object System.Drawing.PointF($x, [float]$padding)
                 $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
@@ -121,7 +144,7 @@
                     $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 }
                 Write-Verbose "BottomText scaling: $iterations iteration(s)  fitCheck=($([Math]::Round($size.Width,1)) <= $availableWidth)"
-                $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
+                $x = [float][Math]::Max(($contentWidth - $size.Width) / 2, $padding)
                 $y = [float]($bitmap.Height - $size.Height - $padding)
                 Write-Verbose "BottomText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$([Math]::Round($y,1))"
                 $point = New-Object System.Drawing.PointF($x, $y)
