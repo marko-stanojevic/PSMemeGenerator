@@ -5,7 +5,7 @@ function New-Meme {
 
     .DESCRIPTION
         Downloads a meme template from a URL and applies top and bottom text using System.Drawing.
-        Requires Windows OS due to System.Drawing dependencies in modern .NET.
+        Requires Windows with PowerShell 7.4 or later (Core edition) due to System.Drawing dependencies.
 
     .PARAMETER Id
         The ID of the source meme template from Imgflip.

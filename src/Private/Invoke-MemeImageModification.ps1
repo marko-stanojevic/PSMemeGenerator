@@ -19,7 +19,16 @@
     begin {
         Write-Verbose "Starting $($MyInvocation.MyCommand)"
         if (-not $IsWindows) {
-            throw 'This function requires Windows OS due to System.Drawing dependencies.'
+            $message = 'PSMemeGenerator requires Windows with PowerShell 7.4+ Core edition. ' +
+                       "Current OS: $([System.Runtime.InteropServices.RuntimeInformation]::OSDescription). " +
+                       'This is due to System.Drawing dependencies which are only available on Windows.'
+            throw $message
+        }
+        if ($PSVersionTable.PSVersion -lt [version]'7.4') {
+            $message = 'PSMemeGenerator requires PowerShell 7.4 or later. ' +
+                       "Current version: $($PSVersionTable.PSVersion). " +
+                       'Please upgrade PowerShell.'
+            throw $message
         }
     }
 
