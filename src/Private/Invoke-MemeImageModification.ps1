@@ -96,7 +96,8 @@
             Write-Verbose "Font resolved: '$($impactCheck.Name)' (requested 'Impact') - $(if ($impactCheck.Name -ne 'Impact') { 'WARNING: Impact not installed, using fallback' } else { 'OK' })"
             $impactCheck.Dispose()
 
-            $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
+            $whiteBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
+            $blackBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::Black)
             $font = $null
             $padding = 10
             $maxFontSize = [float][Math]::Min(40, $contentWidth / 5)
@@ -124,7 +125,17 @@
                 $x = [float][Math]::Max(($contentWidth - $size.Width) / 2, $padding)
                 Write-Verbose "TopText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$padding"
                 $point = New-Object System.Drawing.PointF($x, [float]$padding)
-                $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
+                # Draw text as GraphicsPath: black outline first, then white fill
+                $emSize = [float]($fontSize * $graphics.DpiY / 72)
+                $outlineWidth = [float][Math]::Max(2, $fontSize / 8)
+                $outlinePen = New-Object System.Drawing.Pen([System.Drawing.Color]::Black, $outlineWidth)
+                $outlinePen.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
+                $textPath = New-Object System.Drawing.Drawing2D.GraphicsPath
+                $textPath.AddString($text, $font.FontFamily, [int]$font.Style, $emSize, $point, $typographicFormat)
+                $graphics.DrawPath($outlinePen, $textPath)
+                $graphics.FillPath($whiteBrush, $textPath)
+                $textPath.Dispose()
+                $outlinePen.Dispose()
                 $font.Dispose()
                 $font = $null
             }
@@ -148,7 +159,17 @@
                 $y = [float]($bitmap.Height - $size.Height - $padding)
                 Write-Verbose "BottomText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$([Math]::Round($y,1))"
                 $point = New-Object System.Drawing.PointF($x, $y)
-                $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
+                # Draw text as GraphicsPath: black outline first, then white fill
+                $emSize = [float]($fontSize * $graphics.DpiY / 72)
+                $outlineWidth = [float][Math]::Max(2, $fontSize / 8)
+                $outlinePen = New-Object System.Drawing.Pen([System.Drawing.Color]::Black, $outlineWidth)
+                $outlinePen.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
+                $textPath = New-Object System.Drawing.Drawing2D.GraphicsPath
+                $textPath.AddString($text, $font.FontFamily, [int]$font.Style, $emSize, $point, $typographicFormat)
+                $graphics.DrawPath($outlinePen, $textPath)
+                $graphics.FillPath($whiteBrush, $textPath)
+                $textPath.Dispose()
+                $outlinePen.Dispose()
                 $font.Dispose()
                 $font = $null
             }
@@ -165,7 +186,8 @@
         } finally {
             if ($null -ne $graphics) { $graphics.Dispose() }
             if ($null -ne $bitmap) { $bitmap.Dispose() }
-            if ($null -ne $brush) { $brush.Dispose() }
+            if ($null -ne $whiteBrush) { $whiteBrush.Dispose() }
+            if ($null -ne $blackBrush) { $blackBrush.Dispose() }
             if ($null -ne $font) { $font.Dispose() }
             if ($null -ne $encoderParams) { $encoderParams.Dispose() }
         }
