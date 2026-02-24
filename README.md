@@ -20,10 +20,10 @@ PSMemeGenerator is designed for engineers who live in the terminal. It simplifie
 ## Example Output
 
 ```powershell
-New-Meme -Name 'Futurama Fry' -TopText 'Not sure is prod is broken' -BottomText 'Or monitoring'
+New-Meme -Name 'Distracted Boyfriend' -TopText 'Pull requests' -BottomText 'Pushing directly to main' -OutputPath '.\pushing_directly_to_main.jpg'
 ```
 
-![Futurama Fry - Not sure is prod is broken or monitoring](assets/futurama_fry_prod_or_monitoring.png)
+![Distracted Boyfriend - Pull requests vs Pushing directly to main](assets/distracted_boyfriend_pushing_directly_to_main.png)
 
 ## 🚀 Getting Started
 
@@ -52,14 +52,14 @@ Get-MemeTemplate -Name 'Distracted Boyfriend'
 
 ```powershell
 Get-MemeTemplate | ForEach-Object {
-    New-Meme -Id $_.Id -TopText 'Pull requests' -BottomText 'Pushing directly to main' -OutputPath ".\drake_$($_.Id).jpg"
+    New-Meme -Id $_.Id -TopText 'Pull requests' -BottomText 'Pushing directly to main' -OutputPath ".\meme_$($_.Id).jpg"
 }
 ```
 
 #### Quick one-liner with a known template name
 
 ```powershell
-New-Meme -Name 'Two Buttons' -TopText 'Fix the bug' -BottomText 'Close the ticket as "by design"' -OutputPath '.\buttons.jpg'
+New-Meme -Name 'Distracted Boyfriend' -TopText 'Fix the bug' -BottomText 'Close the ticket as "by design"' -OutputPath '.\pushing_directly_to_main.jpg'
 ```
 
 ## 📘 Documentation
