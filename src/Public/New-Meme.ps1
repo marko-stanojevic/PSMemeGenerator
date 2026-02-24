@@ -24,6 +24,9 @@ function New-Meme {
 
     .PARAMETER OutputPath
         The path where the generated meme image will be saved.
+        Defaults to the current user's Desktop. The filename is derived from BottomText (or TopText
+        if BottomText is not provided), with spaces replaced by underscores (e.g. meme_like_a_boss.jpg).
+        Falls back to meme.jpg if neither text is provided.
 
     .EXAMPLE
         New-Meme -Name "Drake" -TopText "WHEN YOU WRITE" -BottomText "A POWERSHELL MODULE" -OutputPath ".\meme.jpg"
@@ -53,8 +56,7 @@ function New-Meme {
         [string]
         $Url,
 
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter()]
         [string]
         $OutputPath,
 
@@ -73,6 +75,14 @@ function New-Meme {
 
     process {
         try {
+            if ([string]::IsNullOrEmpty($OutputPath)) {
+                $desktop = [System.Environment]::GetFolderPath('Desktop')
+                $textForName = if (-not [string]::IsNullOrWhiteSpace($BottomText)) { $BottomText } elseif (-not [string]::IsNullOrWhiteSpace($TopText)) { $TopText } else { 'meme' }
+                $safeName = ($textForName.ToLower() -replace '[^a-z0-9]+', '_').Trim('_')
+                $OutputPath = Join-Path $desktop "meme_$safeName.jpg"
+                Write-Verbose "No OutputPath specified, defaulting to: $OutputPath"
+            }
+
             $resolvedPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
 
             $targetUrl = $Url
