@@ -76,10 +76,32 @@ function Invoke-MemeImageModification {
             $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
             $font = $null
             $padding = 10
-            $maxFontSize = [float][Math]::Min(40, $bitmap.Width / 5)
-            $availableWidth = $bitmap.Width - 2 * $padding
+
+            # Detect the actual content width by scanning columns from the right edge inward.
+            # Some templates have baked-in whitespace on the right that would offset text centering.
+            $whiteThreshold = 240
+            $sampleStep = 10
+            $contentWidth = $bitmap.Width
+            for ($col = $bitmap.Width - 1; $col -ge [int]($bitmap.Width * 0.5); $col--) {
+                $isBlank = $true
+                for ($row = 0; $row -lt $bitmap.Height; $row += $sampleStep) {
+                    $pixel = $bitmap.GetPixel($col, $row)
+                    if ($pixel.R -lt $whiteThreshold -or $pixel.G -lt $whiteThreshold -or $pixel.B -lt $whiteThreshold) {
+                        $isBlank = $false
+                        break
+                    }
+                }
+                if (-not $isBlank) {
+                    $contentWidth = $col + 1
+                    break
+                }
+            }
+            Write-Verbose "Content width detection: bitmap=$($bitmap.Width)px  detectedContent=$($contentWidth)px  (scanned right 50% of columns)"
+
+            $maxFontSize = [float][Math]::Min(40, $contentWidth / 5)
+            $availableWidth = $contentWidth - 2 * $padding
             Write-Verbose "Image dimensions for layout: Width=$($bitmap.Width) Height=$($bitmap.Height)"
-            Write-Verbose "Padding: $padding  MaxFontSize: $maxFontSize pt  AvailableWidth: $availableWidth px"
+            Write-Verbose "ContentWidth=$contentWidth  Padding=$padding  MaxFontSize=$maxFontSize pt  AvailableWidth=$availableWidth px"
             # GenericTypographic gives true text bounds without GDI+ whitespace padding
             $typographicFormat = [System.Drawing.StringFormat]::GenericTypographic
 
@@ -98,7 +120,7 @@ function Invoke-MemeImageModification {
                     $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 }
                 Write-Verbose "TopText scaling: $iterations iteration(s)  fitCheck=($([Math]::Round($size.Width,1)) <= $availableWidth)"
-                $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
+                $x = [float][Math]::Max(($contentWidth - $size.Width) / 2, $padding)
                 Write-Verbose "TopText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$padding"
                 $point = New-Object System.Drawing.PointF($x, [float]$padding)
                 $graphics.DrawString($text, $font, $brush, $point, $typographicFormat)
@@ -121,7 +143,7 @@ function Invoke-MemeImageModification {
                     $size = $graphics.MeasureString($text, $font, [System.Drawing.PointF]::Empty, $typographicFormat)
                 }
                 Write-Verbose "BottomText scaling: $iterations iteration(s)  fitCheck=($([Math]::Round($size.Width,1)) <= $availableWidth)"
-                $x = [float][Math]::Max(($bitmap.Width - $size.Width) / 2, $padding)
+                $x = [float][Math]::Max(($contentWidth - $size.Width) / 2, $padding)
                 $y = [float]($bitmap.Height - $size.Height - $padding)
                 Write-Verbose "BottomText final: fontSize=$fontSize pt  textWidth=$([Math]::Round($size.Width,1))  x=$([Math]::Round($x,1))  y=$([Math]::Round($y,1))"
                 $point = New-Object System.Drawing.PointF($x, $y)
